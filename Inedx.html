@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>정보(데이터) 실습 놀이터 — 아날로그↔디지털 (개념도 포함)</title>
+<style>
+  :root{
+    --blue:#2f6fed; --blue-d:#1e4fc0; --orange:#ff9f1c; --green:#2ec4b6;
+    --pink:#e85d9e; --bg:#fdf9f1; --card:#ffffff; --ink:#33322e; --line:#eee5d8;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; font-family:'Malgun Gothic','맑은 고딕','Apple SD Gothic Neo',sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.5;
+  }
+  header{
+    background:linear-gradient(120deg,#2f6fed,#7b5cff 60%,#e85d9e);
+    color:#fff; padding:18px 16px 14px; text-align:center;
+  }
+  header h1{margin:0 0 4px; font-size:clamp(19px,4vw,28px);}
+  header p{margin:0; font-size:clamp(12px,2.6vw,15px); opacity:.92;}
+  .tabs{display:flex; gap:8px; justify-content:center; flex-wrap:wrap;
+    padding:12px 10px 0; max-width:1000px; margin:0 auto;}
+  .tab-btn{
+    border:none; border-radius:999px; padding:12px 22px; font-size:clamp(14px,3vw,17px);
+    font-weight:bold; cursor:pointer; background:#efe6d6; color:#6b6455; transition:.15s;
+  }
+  .tab-btn.active{background:var(--blue); color:#fff; box-shadow:0 4px 12px rgba(47,111,237,.35);}
+  main{max-width:1000px; margin:0 auto; padding:14px 12px 60px;}
+  .panel{display:none; animation:pop .2s ease;}
+  .panel.show{display:block;}
+  @keyframes pop{from{opacity:0; transform:translateY(6px);}to{opacity:1;}}
+  .card{
+    background:var(--card); border:2px solid var(--line); border-radius:16px;
+    padding:14px; margin-top:14px; box-shadow:0 2px 8px rgba(0,0,0,.05);
+  }
+  .card h2{margin:0 0 8px; font-size:clamp(16px,3.4vw,20px);}
+  .card h2 .badge{font-size:.7em; background:var(--orange); color:#fff; border-radius:8px;
+    padding:2px 8px; vertical-align:middle; margin-left:6px;}
+  .hint{font-size:13px; color:#8a8272; margin:4px 0 10px;}
+  canvas#cv{
+    width:100%; height:auto; display:block; background:#f4f9ff;
+    border:2px solid #d5e3fb; border-radius:12px; touch-action:none; cursor:crosshair;
+  }
+  .presets{display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 2px;}
+  .chip{
+    border:2px solid var(--blue); background:#eef4ff; color:var(--blue-d);
+    border-radius:999px; padding:8px 14px; font-size:14px; font-weight:bold; cursor:pointer;
+  }
+  .chip:hover{background:#dce8ff;}
+  .controls{display:flex; gap:18px; flex-wrap:wrap; margin-top:12px;}
+  .ctrl{flex:1 1 260px;}
+  .ctrl label{display:flex; justify-content:space-between; font-weight:bold; font-size:14px; margin-bottom:4px;}
+  .ctrl label output{color:var(--blue-d); background:#eef4ff; padding:0 10px; border-radius:8px;}
+  input[type=range]{width:100%; height:34px; accent-color:var(--blue); cursor:pointer;}
+  .explain{
+    margin-top:12px; background:#fff8e6; border:2px dashed var(--orange);
+    border-radius:12px; padding:10px 14px; font-size:clamp(13px,3vw,16px); font-weight:bold;
+  }
+  .explain .err{color:var(--pink);}
+  .tbl-wrap{max-height:240px; overflow:auto; border:1px solid var(--line); border-radius:10px; margin-top:10px;}
+  table{border-collapse:collapse; width:100%; font-size:13px; min-width:420px;}
+  th,td{border-bottom:1px solid var(--line); padding:6px 8px; text-align:center;}
+  th{background:#eef4ff; color:var(--blue-d); position:sticky; top:0;}
+  td code{font-family:Consolas,monospace; background:#f4f4f0; padding:1px 6px; border-radius:6px; letter-spacing:1px;}
+  /* ===== 2진수 카드 ===== */
+  .bit-row{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:14px 0;}
+  .bit-card{
+    width:clamp(70px,18vw,104px); border:3px solid #d9d2c4; border-radius:16px;
+    background:#fbf7ef; padding:10px 6px 12px; cursor:pointer; text-align:center;
+    transition:.15s; user-select:none;
+  }
+  .bit-card .bulb{font-size:clamp(34px,9vw,52px); line-height:1.15; filter:grayscale(1) opacity(.35); transition:.15s;}
+  .bit-card .w{font-weight:900; font-size:clamp(16px,4vw,22px); color:#9a917d;}
+  .bit-card.on{border-color:var(--orange); background:#fff3dc; transform:translateY(-4px);
+    box-shadow:0 8px 16px rgba(255,159,28,.3);}
+  .bit-card.on .bulb{filter:none;}
+  .bit-card.on .w{color:var(--orange);}
+  .sum-box{
+    text-align:center; font-size:clamp(15px,3.6vw,19px); font-weight:bold;
+    background:#eef4ff; border-radius:12px; padding:10px; margin:6px auto; max-width:640px;
+  }
+  .sum-box .big{font-size:clamp(26px,6vw,38px); color:var(--blue-d); font-weight:900;}
+  .btn{
+    border:none; border-radius:12px; padding:13px 22px; font-size:clamp(14px,3.2vw,17px);
+    font-weight:bold; cursor:pointer; color:#fff; transition:.15s; margin:4px 6px 4px 0;
+  }
+  .btn-blue{background:var(--blue);} .btn-blue:hover{background:var(--blue-d);}
+  .btn-green{background:var(--green);} .btn-green:hover{background:#25a396;}
+  .btn-orange{background:var(--orange);} .btn-orange:hover{background:#e8890b;}
+  .btn-pink{background:var(--pink);} .btn-pink:hover{background:#c94485;}
+  .btn-gray{background:#8a827d;} .btn-gray:hover{background:#6f6a66;}
+  .feedback{
+    min-height:30px; margin-top:10px; padding:10px 14px; border-radius:12px;
+    font-weight:bold; font-size:clamp(13px,3vw,16px); background:#f6f4ee;
+  }
+  .feedback.ok{background:#e2fbf7; color:#0c7a6e; border:2px solid var(--green);}
+  .feedback.no{background:#ffe9ef; color:#b3255e; border:2px solid var(--pink);}
+  .score{font-weight:900; color:var(--pink); font-size:clamp(15px,3.4vw,18px);}
+  .target-num{font-size:clamp(34px,8vw,52px); font-weight:900; color:var(--blue-d);}
+  .quiz-q{font-size:clamp(16px,3.6vw,20px); font-weight:bold; margin:6px 0;}
+  .quiz-q .mono{font-family:Consolas,monospace; letter-spacing:3px; font-size:1.2em; color:var(--blue-d);}
+  input.qin{
+    font-size:clamp(16px,4vw,20px); padding:10px 12px; border:2px solid #d9d2c4;
+    border-radius:10px; width:clamp(140px,40vw,220px); font-family:Consolas,monospace;
+  }
+  input.qin:focus{outline:none; border-color:var(--blue);}
+  .solution{
+    display:none; margin-top:10px; background:#f0fbf9; border:2px solid var(--green);
+    border-radius:12px; padding:10px 14px; font-size:14px; white-space:pre-wrap;
+    font-family:Consolas,monospace; line-height:1.8; overflow-x:auto;
+  }
+  .cols{display:flex; gap:14px; flex-wrap:wrap;}
+  .cols>.card{flex:1 1 320px; margin-top:14px;}
+  .mode-bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  footer{text-align:center; font-size:12px; color:#a49a87; padding:0 10px 30px;}
+  @media (max-width:420px){
+    .btn{padding:12px 14px;}
+    .card{padding:11px;}
+  }
+
+  /* ===== 개념도 공통 ===== */
+  .concept{background:#f2f7ff; border:2px solid #c9dbfb;}
+  .concept .legend{display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    font-size:clamp(12px,2.8vw,14px); color:#4a5a7a; margin-bottom:6px;}
+  .legend .ln{display:inline-block; width:34px; height:0; border-top:3px solid; border-radius:2px; margin-right:5px; vertical-align:middle;}
+  .analog-svg{width:100%; height:auto; display:block;}
+  .flow{display:flex; align-items:stretch; justify-content:center; gap:6px; flex-wrap:nowrap; margin-top:12px;}
+  .flow .step{
+    flex:1 1 0; min-width:0; background:#fff; border:2px solid #c9dbfb; border-radius:14px;
+    padding:10px 6px; text-align:center;
+  }
+  .flow .step .ic{font-size:clamp(22px,5.5vw,30px); line-height:1.2;}
+  .flow .step .t{font-weight:900; font-size:clamp(13px,3.2vw,17px); color:var(--blue-d); margin:2px 0;}
+  .flow .step .d{font-size:clamp(11px,2.6vw,13px); color:#6b7ea3; line-height:1.45;}
+  .flow .arrow{display:flex; align-items:center; font-size:clamp(16px,4vw,24px); font-weight:900; color:var(--orange); padding:0 2px;}
+  .flow .step.start{border-color:#8fb3f5; background:#eef4ff;}
+  .flow .step.end{border-color:var(--green); background:#eafaf8;}
+  .flow .step.end .t{color:#0c7a6e;}
+  @media (max-width:560px){
+    .flow{flex-direction:column; align-items:stretch;}
+    .flow .arrow{justify-content:center; transform:rotate(90deg); padding:2px 0;}
+    .flow .step{display:flex; align-items:center; gap:10px; text-align:left; padding:8px 12px;}
+    .flow .step .ic{font-size:24px; flex:0 0 auto;}
+    .flow .step .txtwrap{min-width:0;}
+  }
+  /* ===== 2진수 개념도 ===== */
+  .place-row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:10px 0 4px;}
+  .place-card{
+    flex:0 1 120px; min-width:88px; background:#fff; border:3px solid #e3d9c6; border-radius:16px;
+    text-align:center; padding:10px 6px 12px;
+  }
+  .place-card.on{border-color:var(--orange); background:#fff3dc; box-shadow:0 6px 14px rgba(255,159,28,.28);}
+  .place-card .pw{font-weight:900; font-size:clamp(15px,4vw,20px); color:#7c8aa8;}
+  .place-card.on .pw{color:#c56a00;}
+  .place-card .pv{font-weight:900; font-size:clamp(20px,5.5vw,28px); color:var(--blue-d);}
+  .place-card .bulb{font-size:clamp(28px,8vw,44px); line-height:1.2; filter:grayscale(1) opacity(.35);}
+  .place-card.on .bulb{filter:none;}
+  .place-card .bitb{display:inline-block; margin-top:4px; font-family:Consolas,monospace; font-weight:900;
+    font-size:clamp(14px,3.6vw,18px); background:#f0ede6; color:#8a8272; border-radius:8px; padding:1px 12px;}
+  .place-card.on .bitb{background:var(--orange); color:#fff;}
+  .place-sum{
+    margin:10px auto 2px; max-width:640px; text-align:center; background:#eef4ff;
+    border-radius:12px; padding:10px; font-weight:bold; font-size:clamp(13px,3.2vw,16px);
+  }
+  .place-sum .big{font-size:clamp(20px,5vw,28px); color:var(--blue-d); font-weight:900; font-family:Consolas,monospace;}
+  @media (prefers-reduced-motion:reduce){ .panel{animation:none;} }
+</style>
+</head>
+<body>
+<header>
+  <h1>🖥️ 정보(데이터) 실습 놀이터</h1>
+  <p>아날로그는 어떻게 디지털이 될까? 그리고 2진수는 어떻게 수를 만들까?</p>
+</header>
+
+<nav class="tabs">
+  <button class="tab-btn active" id="tab1btn" onclick="switchTab(1)">📈 실습 1. 아날로그 → 디지털</button>
+  <button class="tab-btn" id="tab2btn" onclick="switchTab(2)">💡 실습 2. 2진수 변환 게임</button>
+</nav>
+
+<main>
+<!-- ================= 실습 1 ================= -->
+<section class="panel show" id="panel1">
+
+  <!-- ===== 개념도 1 : 아날로그 vs 디지털 + 4단계 파이프라인 ===== -->
+  <div class="card concept">
+    <h2>🗺️ 개념도 1. 아날로그 신호 vs 디지털 신호 <span class="badge">데이터 단원 도입</span></h2>
+    <div class="legend">
+      <span><span class="ln" style="border-color:#2f6fed;"></span>아날로그 (연속적인 곡선)</span>
+      <span><span class="ln" style="border-color:#ff9f1c; border-top-style:dashed;"></span>디지털 (계단식·끊긴 신호)</span>
+    </div>
+    <svg class="analog-svg" viewBox="0 0 760 230" role="img" aria-label="아날로그 곡선과 디지털 계단 신호 비교 그림" preserveAspectRatio="xMidYMid meet">
+      <!-- 아날로그 패널 -->
+      <rect x="8" y="30" width="350" height="150" rx="14" fill="#f4f9ff" stroke="#d5e3fb" stroke-width="2"/>
+      <text x="183" y="22" text-anchor="middle" font-size="16" font-weight="bold" fill="#1e4fc0">아날로그 🌊 (연속)</text>
+      <line x1="28" y1="105" x2="338" y2="105" stroke="#dbe7fa" stroke-width="1.5"/>
+      <path d="M 28 105
+               C 50 45, 75 45, 98 105 S 146 165, 169 105 S 217 45, 240 105 S 288 165, 311 105 S 336 60, 338 70"
+            fill="none" stroke="#2f6fed" stroke-width="4" stroke-linecap="round"/>
+      <!-- 디지털 패널 -->
+      <rect x="402" y="30" width="350" height="150" rx="14" fill="#fff8ee" stroke="#ffe0ad" stroke-width="2"/>
+      <text x="577" y="22" text-anchor="middle" font-size="16" font-weight="bold" fill="#c56a00">디지털 🪜 (끊김)</text>
+      <line x1="422" y1="105" x2="732" y2="105" stroke="#f3e4c8" stroke-width="1.5"/>
+      <path d="M 422 150 H 453 V 105 H 484 V 60 H 515 V 105 H 546 V 150 H 577 V 105 H 608 V 60 H 639 V 105 H 670 V 150 H 701 V 105 H 732"
+            fill="none" stroke="#ff9f1c" stroke-width="4" stroke-linejoin="round"/>
+      <g fill="#e8425f" stroke="#fff" stroke-width="2">
+        <circle cx="453" cy="105" r="5"/><circle cx="484" cy="60" r="5"/><circle cx="515" cy="105" r="5"/>
+        <circle cx="546" cy="150" r="5"/><circle cx="577" cy="105" r="5"/><circle cx="608" cy="60" r="5"/>
+        <circle cx="639" cy="105" r="5"/><circle cx="670" cy="150" r="5"/><circle cx="701" cy="105" r="5"/>
+      </g>
+      <text x="383" y="115" text-anchor="middle" font-size="22" font-weight="900" fill="#ff9f1c">➜</text>
+      <text x="183" y="202" text-anchor="middle" font-size="13" fill="#4a5a7a">시간이 흐르며 값이 쭉 이어져 변함 (소리·온도·빛)</text>
+      <text x="577" y="202" text-anchor="middle" font-size="13" fill="#4a5a7a">정해진 단계의 값으로 끊어져 저장됨 (0과 1)</text>
+    </svg>
+
+    <h2 style="margin-top:14px;">🚦 디지털로 바꾸는 4단계 파이프라인</h2>
+    <div class="flow" role="list">
+      <div class="step start" role="listitem">
+        <div class="ic">〰️</div><div class="txtwrap">
+        <div class="t">아날로그</div><div class="d">연속적인 원본 신호 (소리·온도·빛)</div></div>
+      </div>
+      <div class="arrow" aria-hidden="true">➜</div>
+      <div class="step" role="listitem">
+        <div class="ic">📏</div><div class="txtwrap">
+        <div class="t">① 표본화</div><div class="d">일정한 간격으로 값을 채취</div></div>
+      </div>
+      <div class="arrow" aria-hidden="true">➜</div>
+      <div class="step" role="listitem">
+        <div class="ic">🪜</div><div class="txtwrap">
+        <div class="t">② 양자화</div><div class="d">정해진 단계로 반올림</div></div>
+      </div>
+      <div class="arrow" aria-hidden="true">➜</div>
+      <div class="step" role="listitem">
+        <div class="ic">🔢</div><div class="txtwrap">
+        <div class="t">③ 부호화</div><div class="d">2진수(0과 1)로 변환</div></div>
+      </div>
+      <div class="arrow" aria-hidden="true">➜</div>
+      <div class="step end" role="listitem">
+        <div class="ic">💾</div><div class="txtwrap">
+        <div class="t">디지털</div><div class="d">0과 1로 저장된 데이터</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>1-1. 표본화 &amp; 양자화 관찰하기 <span class="badge">캔버스</span></h2>
+    <p class="hint">기본 파형을 고르거나, 캔버스 위에 마우스(손가락)로 <b>직접 곡선을 그려</b> 보세요!</p>
+    <div class="presets">
+      <button class="chip" onclick="setPreset('sine')">〰️ 사인파(소리)</button>
+      <button class="chip" onclick="setPreset('temp')">🌡️ 온도 곡선</button>
+      <button class="chip" onclick="setPreset('sound')">🔊 소리 파형</button>
+      <button class="chip" onclick="setPreset('draw')">✏️ 직접 그리기 모드</button>
+    </div>
+    <canvas id="cv" width="900" height="360"></canvas>
+    <div class="controls">
+      <div class="ctrl">
+        <label>표본화 간격 (샘플 개수) <output id="outS">12개</output></label>
+        <input type="range" id="slSamples" min="3" max="48" value="12" oninput="redraw()">
+      </div>
+      <div class="ctrl">
+        <label>양자화 단계 수 <output id="outQ">8단계</output></label>
+        <input type="range" id="slLevels" min="2" max="16" value="8" step="1" oninput="redraw()">
+      </div>
+    </div>
+    <div class="explain" id="explainBox"></div>
+  </div>
+
+  <div class="card">
+    <h2>1-2. 부호화 표 — 샘플 값의 2진수</h2>
+    <p class="hint">각 샘플은 정해진 단계(양자화 값)로 반올림되고, 그 값이 2진수로 바뀌어 저장됩니다.</p>
+    <div class="tbl-wrap">
+      <table id="codeTable">
+        <thead><tr><th>샘플</th><th>원본 높이(%)</th><th>양자화 값(10진수)</th><th>2진수 부호</th></tr></thead>
+        <tbody id="codeBody"></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 실습 2 ================= -->
+<section class="panel" id="panel2">
+
+  <!-- ===== 개념도 2 : 비트 자릿수 (전구 = 1/0) ===== -->
+  <div class="card concept">
+    <h2>🗺️ 개념도 2. 비트의 자릿값 — 전구 ON/OFF가 곧 1과 0 <span class="badge">2진수 도입</span></h2>
+    <p class="hint">각 자리는 2의 거듭제곱 값을 가지고, 전구가 켜지면(ON) 그 자리는 <b>1</b>, 꺼지면(OFF) <b>0</b>입니다.</p>
+    <div class="place-row" role="img" aria-label="자릿값 8,4,2,1 카드에서 1101은 8+4+0+1=13">
+      <div class="place-card on">
+        <div class="pw">2³</div><div class="pv">8</div>
+        <div class="bulb">💡</div><div class="bitb">1</div>
+      </div>
+      <div class="place-card on">
+        <div class="pw">2²</div><div class="pv">4</div>
+        <div class="bulb">💡</div><div class="bitb">1</div>
+      </div>
+      <div class="place-card">
+        <div class="pw">2¹</div><div class="pv">2</div>
+        <div class="bulb">💡</div><div class="bitb">0</div>
+      </div>
+      <div class="place-card on">
+        <div class="pw">2⁰</div><div class="pv">1</div>
+        <div class="bulb">💡</div><div class="bitb">1</div>
+      </div>
+    </div>
+    <div class="place-sum">
+      예시) <span class="big">1101₂</span> = <b>8</b> + <b>4</b> + <b>0</b> + <b>1</b> = <span class="big">13</span>
+      &nbsp;<span style="color:#6b7ea3;">(전구 3개 ON → 1인 자리의 값만 더하기)</span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>2-1. 8-4-2-1 카드로 수 만들기 <span class="badge">전구 토글</span></h2>
+    <p class="hint">전구 카드를 눌러 켜고(ON) 꺼보세요(OFF)! 켜진 카드의 값이 모두 더해집니다.</p>
+    <div class="bit-row" id="bitRow"></div>
+    <div class="sum-box">
+      켜진 카드 합계 = <span class="big" id="sumVal">0</span>
+      &nbsp;→&nbsp; 2진수 <span class="big mono" id="sumBin" style="font-family:Consolas,monospace">0000</span>
+    </div>
+    <div class="mode-bar">
+      <button class="btn btn-orange" id="modeBtn" onclick="toggleMode()">🎯 출제 모드 시작</button>
+      <span id="targetBox" style="display:none">
+        목표 숫자: <span class="target-num" id="targetNum">0</span>
+      </span>
+      <button class="btn btn-green" id="checkBtn" style="display:none" onclick="checkCards()">✅ 정답 확인</button>
+      <button class="btn btn-gray" onclick="resetCards()">🔄 카드 초기화</button>
+      <span class="score">점수: <span id="scoreVal">0</span>점</span>
+    </div>
+    <div class="feedback" id="fbCards">자유롭게 카드를 만져보며 2진수에 익숙해져 보세요!</div>
+  </div>
+
+  <div class="cols">
+    <div class="card">
+      <h2>2-2. 퀴즈 A: 10진수 → 2진수</h2>
+      <div class="quiz-q">Q. <span id="qA" style="color:var(--pink); font-size:1.2em;">?</span> 를 2진수로 나타내면?</div>
+      <input class="qin" id="inA" placeholder="예: 1101" inputmode="numeric" onkeydown="if(event.key==='Enter')checkA()">
+      <button class="btn btn-blue" onclick="checkA()">정답 확인</button>
+      <button class="btn btn-gray" onclick="newA()">다른 문제</button>
+      <div class="feedback" id="fbA"></div>
+      <div class="solution" id="solA"></div>
+    </div>
+    <div class="card">
+      <h2>2-3. 퀴즈 B: 2진수 → 10진수</h2>
+      <div class="quiz-q">Q. <span class="mono" id="qB">?</span> 를 10진수로 나타내면?</div>
+      <input class="qin" id="inB" placeholder="예: 13" inputmode="numeric" onkeydown="if(event.key==='Enter')checkB()">
+      <button class="btn btn-blue" onclick="checkB()">정답 확인</button>
+      <button class="btn btn-gray" onclick="newB()">다른 문제</button>
+      <div class="feedback" id="fbB"></div>
+      <div class="solution" id="solB"></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>교실 수업용 인터랙티브 실습 · 인터넷 없이 로컬에서 동작합니다</footer>
+
+<script>
+/* ========== 탭 전환 ========== */
+function switchTab(n){
+  document.getElementById('panel1').classList.toggle('show', n===1);
+  document.getElementById('panel2').classList.toggle('show', n===2);
+  document.getElementById('tab1btn').classList.toggle('active', n===1);
+  document.getElementById('tab2btn').classList.toggle('active', n===2);
+  if(n===2 && !quizAInit){ newA(); newB(); quizAInit = true; }
+}
+var quizAInit = false;
+
+/* ========== 실습 1 : 아날로그 → 디지털 ========== */
+var W=900, H=360;
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var wave=new Array(W);            // 0(아래)~1(위) 정규화 값
+var drawMode=false, drawing=false, lastX=null, lastY=null;
+
+function setPreset(kind){
+  drawMode = (kind==='draw');
+  if(!drawMode){
+    for(var x=0;x<W;x++){
+      var t=x/W;
+      if(kind==='sine')   wave[x]=0.5+0.34*Math.sin(t*Math.PI*2*2);
+      else if(kind==='temp') wave[x]=0.5+0.30*Math.sin(t*Math.PI*2)+0.12*Math.sin(t*Math.PI*4+1.3)+0.06*Math.cos(t*Math.PI*6);
+      else /*sound*/      wave[x]=0.5+0.22*Math.sin(t*Math.PI*2*9)+0.14*Math.sin(t*Math.PI*2*17+0.7)+0.08*Math.sin(t*Math.PI*2*23+2.1);
+    }
+  }
+  redraw();
+}
+function yOf(e){
+  var r=cv.getBoundingClientRect();
+  return {x:(e.clientX-r.left)*W/r.width, y:(e.clientY-r.top)*H/r.height};
+}
+cv.addEventListener('pointerdown',function(e){
+  if(!drawMode) return;
+  drawing=true; cv.setPointerCapture(e.pointerId);
+  var p=yOf(e); lastX=p.x; lastY=p.y; paint(p.x,p.y); redraw();
+});
+cv.addEventListener('pointermove',function(e){
+  if(!drawing) return;
+  var p=yOf(e);
+  var steps=Math.max(1,Math.ceil(Math.abs(p.x-lastX)));
+  for(var i=1;i<=steps;i++){
+    paint(lastX+(p.x-lastX)*i/steps, lastY+(p.y-lastY)*i/steps);
+  }
+  lastX=p.x; lastY=p.y; redraw();
+});
+cv.addEventListener('pointerup',function(){drawing=false;});
+function paint(px,py){
+  var x0=Math.max(0,Math.floor(px-2)), x1=Math.min(W-1,Math.ceil(px+2));
+  for(var x=x0;x<=x1;x++){
+    var t=(px===0)?0:(x-px)/Math.max(1,Math.abs(px- (lastX||px))); // 근처 완화
+    var v=Math.max(0.04,Math.min(0.96,py/H));
+    wave[x]=v;
+  }
+}
+
+function redraw(){
+  var nS=+document.getElementById('slSamples').value;
+  var nQ=+document.getElementById('slLevels').value;
+  document.getElementById('outS').textContent=nS+'개 (간격 약 '+Math.round(W/(nS-1))+'px)';
+  document.getElementById('outQ').textContent=nQ+'단계';
+
+  var bits=Math.max(1,Math.ceil(Math.log2(nQ)));
+  var yPix=function(v){return H - v*H;};
+  ctx.clearRect(0,0,W,H);
+
+  /* 격자 + 양자화 단계선 */
+  ctx.strokeStyle='#e3edfb'; ctx.lineWidth=1;
+  for(var g=1;g<nQ;g++){
+    ctx.beginPath(); ctx.moveTo(0,yPix(g/(nQ-1))); ctx.lineTo(W,yPix(g/(nQ-1))); ctx.stroke();
+  }
+  /* 원본 곡선 */
+  ctx.strokeStyle='#2f6fed'; ctx.lineWidth=2.5; ctx.beginPath();
+  for(var x=0;x<W;x++){
+    var Y=yPix(wave[x]);
+    if(x===0)ctx.moveTo(x,Y); else ctx.lineTo(x,Y);
+  }
+  ctx.stroke();
+
+  /* 표본화 + 양자화 계단 */
+  var samples=[], errSum=0, maxErr=0;
+  for(var i=0;i<nS;i++){
+    var sx=Math.round(i*(W-1)/(nS-1));
+    var v=wave[sx];
+    var lvl=Math.round(v*(nQ-1));
+    var q=(nQ===1)?0:lvl/(nQ-1);
+    samples.push({x:sx,v:v,lvl:lvl,q:q});
+    var e=Math.abs(v-q); errSum+=e; if(e>maxErr)maxErr=e;
+  }
+  ctx.strokeStyle='#ff9f1c'; ctx.lineWidth=3; ctx.beginPath();
+  for(i=0;i<samples.length;i++){
+    var s=samples[i];
+    var xEnd=(i===samples.length-1)?W-1:samples[i+1].x;
+    var Yq=yPix(s.q);
+    if(i===0)ctx.moveTo(0,Yq); else ctx.lineTo(s.x,Yq);
+    ctx.lineTo(xEnd,Yq);
+  }
+  ctx.stroke();
+  /* 세로 점프선 */
+  ctx.strokeStyle='#ffc46e'; ctx.lineWidth=2;
+  for(i=1;i<samples.length;i++){
+    ctx.beginPath();
+    ctx.moveTo(samples[i].x,yPix(samples[i-1].q));
+    ctx.lineTo(samples[i].x,yPix(samples[i].q));
+    ctx.stroke();
+  }
+  /* 샘플 점 */
+  for(i=0;i<samples.length;i++){
+    ctx.beginPath(); ctx.arc(samples[i].x,yPix(samples[i].v),6,0,7);
+    ctx.fillStyle='#e8425f'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+  }
+
+  /* 해설 문구 */
+  var errPct=errSum/samples.length*100;
+  var msg;
+  if(errPct<2.5)      msg='완벽에 가까워요! 🎉 샘플이 촘촘하고 단계가 많아서 <b>디지털 그래프가 원본과 거의 같습니다.</b>';
+  else if(errPct<7)   msg='좋아요! 🙂 간격이 촘촘할수록, 양자화 단계가 많을수록 <b>원본에 가까워집니다.</b>';
+  else if(errPct<15)  msg='차이가 보이나요? 🤔 계단이 굵고 높아졌어요. <b>표본화 간격을 줄이거나 단계 수를 늘려</b> 보세요!';
+  else                msg='원본과 많이 달라졌어요! 😲 샘플이 드문드문하고 단계가 적어 <b>세부 정보를 잃어버렸습니다.</b> — 이것이 바로 "디지털화 손실"이에요.';
+  document.getElementById('explainBox').innerHTML=
+    '💡 <b>해설:</b> '+msg+
+    ' <span class="err">평균 오차: 약 '+errPct.toFixed(1)+'% · 사용 비트: '+bits+'비트</span>';
+
+  /* 부호화 표 */
+  var tb=document.getElementById('codeBody'); tb.innerHTML='';
+  for(i=0;i<samples.length;i++){
+    var s2=samples[i];
+    var bin=s2.lvl.toString(2);
+    while(bin.length<bits) bin='0'+bin;
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td>'+(i+1)+'</td>'+
+      '<td>'+Math.round(s2.v*100)+'%</td>'+
+      '<td><b>'+s2.lvl+'</b></td>'+
+      '<td><code>'+bin+'</code></td>';
+    tb.appendChild(tr);
+  }
+}
+document.getElementById('slSamples').addEventListener('input',redraw);
+document.getElementById('slLevels').addEventListener('input',redraw);
+setPreset('sine');
+
+/* ========== 실습 2 : 2진수 카드 ========== */
+var weights=[8,4,2,1], on=[false,false,false,false];
+var score=0, quizMode=false, target=0;
+var bitRow=document.getElementById('bitRow');
+weights.forEach(function(w,i){
+  var d=document.createElement('div');
+  d.className='bit-card'; d.id='card'+i;
+  d.innerHTML='<div class="bulb">💡</div><div class="w">'+w+'</div>';
+  d.onclick=function(){toggleBit(i);};
+  bitRow.appendChild(d);
+});
+function toggleBit(i){
+  on[i]=!on[i];
+  document.getElementById('card'+i).classList.toggle('on',on[i]);
+  updateSum();
+  if(quizMode) document.getElementById('fbCards').className='feedback';
+}
+function updateSum(){
+  var s=0; weights.forEach(function(w,i){ if(on[i])s+=w; });
+  var bin=''; weights.forEach(function(w,i){ bin+=(on[i]?'1':'0'); });
+  document.getElementById('sumVal').textContent=s;
+  document.getElementById('sumBin').textContent=bin;
+  return s;
+}
+function resetCards(){
+  on=[false,false,false,false];
+  weights.forEach(function(w,i){document.getElementById('card'+i).classList.remove('on');});
+  updateSum();
+}
+function toggleMode(){
+  quizMode=!quizMode;
+  var fb=document.getElementById('fbCards');
+  if(quizMode){
+    document.getElementById('modeBtn').textContent='🚪 출제 모드 끝내기';
+    document.getElementById('checkBtn').style.display='';
+    document.getElementById('targetBox').style.display='';
+    fb.className='feedback';
+    fb.textContent='목표 숫자를 카드(전구)로 만들고 [정답 확인]을 누르세요!';
+    nextTarget();
+  }else{
+    document.getElementById('modeBtn').textContent='🎯 출제 모드 시작';
+    document.getElementById('checkBtn').style.display='none';
+    document.getElementById('targetBox').style.display='none';
+    fb.className='feedback';
+    fb.textContent='자유 실습 모드로 돌아왔어요!';
+    resetCards();
+  }
+}
+function nextTarget(){
+  target=Math.floor(Math.random()*16);
+  document.getElementById('targetNum').textContent=target;
+  resetCards();
+}
+function checkCards(){
+  var fb=document.getElementById('fbCards');
+  var s=updateSum();
+  if(s===target){
+    score++; document.getElementById('scoreVal').textContent=score;
+    fb.className='feedback ok';
+    var bin=''; weights.forEach(function(w,i){bin+=(on[i]?'1':'0');});
+    fb.innerHTML='🎉 정답입니다! '+target+' = '+bin+'₂ &nbsp;('+
+      weights.filter(function(w,i){return on[i];}).join(' + ')+')';
+    setTimeout(nextTarget,1400);
+  }else{
+    fb.className='feedback no';
+    fb.innerHTML='❌ 아직이에요! 지금 카드 합계는 '+s+'이에요. 켜진 카드('+weights.filter(function(w,i){return on[i];}).join(', ')+')를 다시 보고 맞춰보세요!';
+  }
+}
+
+/* ========== 퀴즈 A : 10진수 → 2진수 ========== */
+var ansA=0;
+function newA(){
+  ansA=Math.floor(Math.random()*16);
+  document.getElementById('qA').textContent=ansA;
+  document.getElementById('inA').value='';
+  document.getElementById('fbA').className='feedback';
+  document.getElementById('fbA').textContent='';
+  document.getElementById('solA').style.display='none';
+}
+function powSplit(n){ /* 거듭제곱 합 분해 (8,4,2,1) */
+  var parts=[],ws=[8,4,2,1];
+  for(var k=0;k<ws.length;k++){
+    if(n>=ws[k]){parts.push(ws[k]); n-=ws[k];}
+  }
+  return parts;
+}
+function checkA(){
+  var v=document.getElementById('inA').value.trim();
+  var fb=document.getElementById('fbA'), sol=document.getElementById('solA');
+  var correct=ansA.toString(2);
+  if(v===correct){
+    fb.className='feedback ok';
+    fb.innerHTML='🎉 정답! '+ansA+' = '+correct+'₂';
+  }else{
+    fb.className='feedback no';
+    fb.innerHTML='❌ 다시 도전! '+ansA+'를 8,4,2,1 카드로 만들어 보세요. (힌트: 아래 풀이 참고)';
+  }
+  var parts=powSplit(ansA);
+  sol.innerHTML='<b>풀이</b> — '+ansA+'을 2의 거듭제곱의 합으로 분해:\n'
+    + ansA+' = '+parts.join(' + ')+'\n'
+    + '→ 켜진 자리에 1, 꺼진 자리에 0:\n'
+    + '8 4 2 1 자리 = '+correct+'  ⇒  <b>'+ansA+' = '+correct+'₂</b>';
+  sol.style.display='block';
+}
+
+/* ========== 퀴즈 B : 2진수 → 10진수 ========== */
+var ansB=0;
+function newB(){
+  ansB=Math.floor(Math.random()*16);
+  var b=ansB.toString(2);
+  while(b.length<4)b='0'+b;
+  document.getElementById('qB').textContent=b;
+  document.getElementById('inB').value='';
+  document.getElementById('fbB').className='feedback';
+  document.getElementById('fbB').textContent='';
+  document.getElementById('solB').style.display='none';
+}
+function checkB(){
+  var v=document.getElementById('inB').value.trim();
+  var fb=document.getElementById('fbB'), sol=document.getElementById('solB');
+  var b=ansB.toString(2); while(b.length<4)b='0'+b;
+  if(v===String(ansB)){
+    fb.className='feedback ok';
+    fb.innerHTML='🎉 정답! '+b+'₂ = '+ansB;
+  }else{
+    fb.className='feedback no';
+    fb.innerHTML='❌ 다시 도전! 켜진(1) 자리의 카드 값을 모두 더해 보세요.';
+  }
+  var terms=[],ws=[8,4,2,1];
+  for(var k=0;k<4;k++){
+    if(b[k]==='1') terms.push(ws[k]);
+  }
+  sol.innerHTML='<b>풀이</b> — 각 자리의 카드 값을 더합니다:\n'
+    + b+'₂ = '+(terms.length?terms.join(' + '):'0')+'\n'
+    + '   (자릿값: 8, 4, 2, 1 — 1인 자리만 더함)\n'
+    + '⇒ <b>'+b+'₂ = '+ansB+'</b>';
+  sol.style.display='block';
+}
+</script>
+</body>
+</html>
